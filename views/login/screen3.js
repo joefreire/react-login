@@ -9,9 +9,13 @@ import {
   LayoutAnimation,
   UIManager,
   KeyboardAvoidingView,
+  TextInput,
+  Alert
 } from 'react-native';
-import { cacheFonts } from '../../helpers/AssetsCaching';
 import { Input, Button, Icon } from 'react-native-elements';
+import firebase from 'firebase';
+import { connect } from 'react-redux';
+import { tryLogin } from '../actions';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const SCREEN_HEIGHT = Dimensions.get('window').height;
@@ -34,17 +38,18 @@ TabSelector.propTypes = {
   selected: PropTypes.bool.isRequired,
 };
 
-export default class LoginScreen2 extends Component {
+export default class LoginPage extends React.Component {
   constructor(props) {
     super(props);
 
     this.state = {
-      email: '',
+      mail: '',
       password: '',
       fontLoaded: false,
       selectedCategory: 0,
       isLoading: false,
-      isEmailValid: true,
+      message: '',
+      ismailValid: true,
       isPasswordValid: true,
       isConfirmationValid: true,
     };
@@ -72,35 +77,35 @@ export default class LoginScreen2 extends Component {
     });
   }
 
-  validateEmail(email) {
+  validateEmail(mail) {
     var re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 
-    return re.test(email);
+    return re.test(mail);
   }
 
   login() {
-    const { email, password } = this.state;
+    const { mail, password } = this.state;
     this.setState({ isLoading: true });
     // Simulate an API call
     setTimeout(() => {
       LayoutAnimation.easeInEaseOut();
       this.setState({
         isLoading: false,
-        isEmailValid: this.validateEmail(email) || this.emailInput.shake(),
+        isEmailValid: this.validatemail(mail) || this.mailInput.shake(),
         isPasswordValid: password.length >= 8 || this.passwordInput.shake(),
       });
     }, 1500);
   }
 
   signUp() {
-    const { email, password, passwordConfirmation } = this.state;
+    const { mail, password, passwordConfirmation } = this.state;
     this.setState({ isLoading: true });
     // Simulate an API call
     setTimeout(() => {
       LayoutAnimation.easeInEaseOut();
       this.setState({
         isLoading: false,
-        isEmailValid: this.validateEmail(email) || this.emailInput.shake(),
+        ismailValid: this.validatemail(mail) || this.mailInput.shake(),
         isPasswordValid: password.length >= 8 || this.passwordInput.shake(),
         isConfirmationValid:
           password === passwordConfirmation || this.confirmationInput.shake(),
@@ -112,174 +117,21 @@ export default class LoginScreen2 extends Component {
     const {
       selectedCategory,
       isLoading,
-      isEmailValid,
+      ismailValid,
       isPasswordValid,
       isConfirmationValid,
-      email,
+      mail,
       password,
       passwordConfirmation,
     } = this.state;
-    const isLoginPage = selectedCategory === 0;
-    const isSignUpPage = selectedCategory === 1;
+    const this.state.isLoginPage = selectedCategory === 0;
+    const !this.state.isLoginPage = selectedCategory === 1;
     return (
       <View style={styles.container}>
         <ImageBackground source={BG_IMAGE} style={styles.bgImage}>
           {this.state.fontLoaded ? (
             <View>
-              <KeyboardAvoidingView
-                contentContainerStyle={styles.loginContainer}
-                behavior="position"
-              >
-                <View style={styles.titleContainer}>
-                  <View style={{ flexDirection: 'row' }}>
-                    <Text style={styles.titleText}>Gaspass</Text>
-                  </View>
-                </View>
-                <View style={{ flexDirection: 'row' }}>
-                  <Button
-                    disabled={isLoading}
-                    type="clear"
-                    activeOpacity={0.7}
-                    onPress={() => this.selectCategory(0)}
-                    containerStyle={{ flex: 1 }}
-                    titleStyle={[
-                      styles.categoryText,
-                      isLoginPage && styles.selectedCategoryText,
-                    ]}
-                    title={'Login'}
-                  />
-                  <Button
-                    disabled={isLoading}
-                    type="clear"
-                    activeOpacity={0.7}
-                    onPress={() => this.selectCategory(1)}
-                    containerStyle={{ flex: 1 }}
-                    titleStyle={[
-                      styles.categoryText,
-                      isSignUpPage && styles.selectedCategoryText,
-                    ]}
-                    title={'Sign up'}
-                  />
-                </View>
-                <View style={styles.rowSelector}>
-                  <TabSelector selected={isLoginPage} />
-                  <TabSelector selected={isSignUpPage} />
-                </View>
-                <View style={styles.formContainer}>
-                  <Input
-                    leftIcon={
-                      <Icon
-                        name="envelope-o"
-                        type="font-awesome"
-                        color="rgba(0, 0, 0, 0.38)"
-                        size={25}
-                        style={{ backgroundColor: 'transparent' }}
-                      />
-                    }
-                    value={email}
-                    keyboardAppearance="light"
-                    autoFocus={false}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    keyboardType="email-address"
-                    returnKeyType="next"
-                    inputStyle={{ marginLeft: 10 }}
-                    placeholder={'Email'}
-                    containerStyle={{
-                      borderBottomColor: 'rgba(0, 0, 0, 0.38)',
-                    }}
-                    ref={input => (this.emailInput = input)}
-                    onSubmitEditing={() => this.passwordInput.focus()}
-                    onChangeText={email => this.setState({ email })}
-                    errorMessage={
-                      isEmailValid ? null : 'Please enter a valid email address'
-                    }
-                  />
-                  <Input
-                    leftIcon={
-                      <Icon
-                        name="lock"
-                        type="simple-line-icon"
-                        color="rgba(0, 0, 0, 0.38)"
-                        size={25}
-                        style={{ backgroundColor: 'transparent' }}
-                      />
-                    }
-                    value={password}
-                    keyboardAppearance="light"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    secureTextEntry={true}
-                    returnKeyType={isSignUpPage ? 'next' : 'done'}
-                    blurOnSubmit={true}
-                    containerStyle={{
-                      marginTop: 16,
-                      borderBottomColor: 'rgba(0, 0, 0, 0.38)',
-                    }}
-                    inputStyle={{ marginLeft: 10 }}
-                    placeholder={'Password'}
-                    ref={input => (this.passwordInput = input)}
-                    onSubmitEditing={() =>
-                      isSignUpPage
-                        ? this.confirmationInput.focus()
-                        : this.login()
-                    }
-                    onChangeText={password => this.setState({ password })}
-                    errorMessage={
-                      isPasswordValid
-                        ? null
-                        : 'Please enter at least 8 characters'
-                    }
-                  />
-                  {isSignUpPage && (
-                    <Input
-                      icon={
-                        <Icon
-                          name="lock"
-                          type="simple-line-icon"
-                          color="rgba(0, 0, 0, 0.38)"
-                          size={25}
-                          style={{ backgroundColor: 'transparent' }}
-                        />
-                      }
-                      value={passwordConfirmation}
-                      secureTextEntry={true}
-                      keyboardAppearance="light"
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      keyboardType="default"
-                      returnKeyType={'done'}
-                      blurOnSubmit={true}
-                      containerStyle={{
-                        marginTop: 16,
-                        borderBottomColor: 'rgba(0, 0, 0, 0.38)',
-                      }}
-                      inputStyle={{ marginLeft: 10 }}
-                      placeholder={'Confirm password'}
-                      ref={input => (this.confirmationInput = input)}
-                      onSubmitEditing={this.signUp}
-                      onChangeText={passwordConfirmation =>
-                        this.setState({ passwordConfirmation })
-                      }
-                      errorMessage={
-                        isConfirmationValid
-                          ? null
-                          : 'Please enter the same password'
-                      }
-                    />
-                  )}
-                  <Button
-                    buttonStyle={styles.loginButton}
-                    containerStyle={{ marginTop: 32, flex: 0 }}
-                    activeOpacity={0.8}
-                    title={isLoginPage ? 'LOGIN' : 'SIGN UP'}
-                    onPress={isLoginPage ? this.login : this.signUp}
-                    titleStyle={styles.loginTextButton}
-                    loading={isLoading}
-                    disabled={isLoading}
-                  />
-                </View>
-              </KeyboardAvoidingView>
+
               <View style={styles.helpContainer}>
                 <Button
                   title={'Need help ?'}

@@ -5,6 +5,8 @@ import {
   View,
   ImageBackground,
   Dimensions,
+  TextInput,
+  Alert
 } from 'react-native';
 import { Input, Button, Icon } from 'react-native-elements';
 
