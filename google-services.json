@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "191409216558",
+    "firebase_url": "https://gaspass-9b097.firebaseio.com",
+    "project_id": "gaspass-9b097",
+    "storage_bucket": "gaspass-9b097.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:191409216558:android:37779658f154f966",
+        "android_client_info": {
+          "package_name": "com.gaspass.teste"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "191409216558-hus1s97kc6p4celdq73fq8bn1m99lccm.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.gaspass.teste",
+            "certificate_hash": "e71d02194f4e54cccbcfaba40f35679bad85bdfd"
+          }
+        },
+        {
+          "client_id": "191409216558-3nrrhh2vdhh1r04k3sjsc0ueeriuiukh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBVOBZ_Clp4mZq-Le_FFdmt24XOqW6zs4I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "191409216558-5h00cctomrkoorh4sem3vfdhtdf4nh5t.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

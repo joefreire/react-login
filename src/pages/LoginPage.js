@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import PropTypes from 'prop-types';
 import {
 	StyleSheet,
 	View,
@@ -13,12 +12,14 @@ import {
 	TextInput,
 	Alert
 } from 'react-native';
-import { Input, Button, Icon } from 'react-native-elements';
-import firebase from 'firebase';
+import { Input, Button, Icon, SocialIcon  } from 'react-native-elements';
+import firebase from '../Firebase';
 import { connect } from 'react-redux';
 import { tryLogin } from '../actions';
 
-import FormRow from '../components/FormRow';
+import Expo from 'expo';
+import * as Facebook from 'expo-facebook';
+
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const SCREEN_HEIGHT = Dimensions.get('window').height;
@@ -28,44 +29,108 @@ const BG_IMAGE = require('../../assets/images/bg_screen4.jpg');
 UIManager.setLayoutAnimationEnabledExperimental &&
 UIManager.setLayoutAnimationEnabledExperimental(true);
 
-const TabSelector = ({ selected }) => {
-	return (
-		<View style={styles.selectorContainer}>
-		<View style={selected && styles.selected} />
-		</View>
-	);
-};
 
-TabSelector.propTypes = {
-	selected: PropTypes.bool.isRequired,
-};
 
 class LoginPage extends React.Component {
 	constructor(props) {
 		super(props);
 
 		this.state = {
-			mail: '',
+			email: '',
 			password: '',
 			isLoading: false,
 			isLoginPage: true,
 			isEmailValid: true,
-			message: ''
+			message: '',
+			error: null
 		}
 	}
 
+/*	signInAsync = async () => {
+		console.log('dsa')
+		try {
+			const result = await Expo.Google.logInAsync({
+				androidClientId: '191409216558-hus1s97kc6p4celdq73fq8bn1m99lccm.apps.googleusercontent.com',
+				iosClientId: YOUR_CLIENT_ID_HERE,
+				scopes: ['profile', 'email'],
+			});
 
-	componentDidMount() {
-		const firebaseConfig = {
-		  apiKey: "AIzaSyD_RVgTJBmugYUrALpeii8GZpcwsjkzA2I",
-		  authDomain: "gaspass-9b097.firebaseapp.com",
-		  databaseURL: "https://gaspass-9b097.firebaseio.com",
-		  projectId: "gaspass-9b097",
-		  storageBucket: "",
-		  messagingSenderId: "191409216558",
-		  appId: "1:191409216558:web:6628198004153f8c"
+			if (result.type === 'success') {
+				return result.accessToken;
+			} else {
+				return { cancelled: true };
+			}
+		} catch (e) {
+			console.log(e)
+			return { error: true };
+		}
+	};*/
+
+	logInFacebook = async () => {
+		console.log('facebook')
+		try {
+			const {
+				type,
+				token,
+				expires,
+				permissions,
+				declinedPermissions,
+			} = await Facebook.logInWithReadPermissionsAsync('644353356070660', {
+				permissions: ['public_profile'],
+			});
+			if (type === 'success') {
+		      // Get the user's name using Facebook's Graph API
+		      const response = await fetch(`https://graph.facebook.com/me?access_token=${token}`);
+		      const data = await response.json();
+		      var provider = 'facebook';
+		      console.log(data)
+		      if(data){
+		      	this.props.tryLogin({ email, password, token, provider })
+		      	.then(user => {
+		      		if (user)
+		      			return this.props.navigation.replace('Main');
+
+		      		this.setState({
+		      			message: ''
+		      		});
+		      	})
+		      	.catch(error => {
+		      		this.setState({
+		      			message: this.getMessageByErrorCode(error.code)
+		      		});
+		      	});
+		      }
+
+		  } else {
+		      // type === 'cancel'
+		  }
+		} catch ({ message }) {
+			alert(`Facebook Login Error: ${message}`);
+		
 		};
-		firebase.initializeApp(firebaseConfig);
+	}
+
+	tryLogin = async () => {
+		await this.setState({ isLoading: true, message: '' });
+		const { email, password } = this.state;
+		await this.props.tryLogin({ email, password })
+		.then(user => {
+			if (user)
+				return this.props.navigation.replace('Main');
+
+			this.setState({
+				isLoading: false,
+				message: ''
+			});
+		})
+		.catch(error => {
+			this.setState({
+				isLoading: false,
+				message: this.getMessageByErrorCode(error.code)
+			});
+		});
+		
+
 	}
 
 	onChangeHandler(field, value) {
@@ -74,29 +139,7 @@ class LoginPage extends React.Component {
 		});
 	}
 
-	tryLogin() {
-		this.setState({ isLoading: true, message: '' });
-		const { mail: email, password } = this.state;
 
-		this.props.tryLogin({ email, password })
-		.then(user => {
-			console.log(user)
-			if (user)
-			return this.props.navigation.replace('Main');
-
-			this.setState({
-				isLoading: false,
-				message: ''
-			});
-		})
-		.catch(error => {
-			console.log(error)
-			this.setState({
-				isLoading: false,
-				message: this.getMessageByErrorCode(error.code)
-			});
-		});
-	}
 
 	getMessageByErrorCode(errorCode) {
 		switch (errorCode) {
@@ -115,13 +158,13 @@ class LoginPage extends React.Component {
 	renderMessage() {
 		const { message } = this.state;
 		if (!message)
-		return null;
+			return null;
 
 		return (
 			<View>
 			<Text>{message}</Text>
 			</View>
-		);
+			);
 	}
 
 	renderButton() {
@@ -134,13 +177,13 @@ class LoginPage extends React.Component {
 			buttonStyle={styles.loginButton}
 			containerStyle={{ marginTop: 32, flex: 0 }}
 			type="clear"
-			title={this.state.isLoginPage ? 'LOGIN' : 'SIGN UP'}
-			onPress={this.state.isLoginPage ? () => this.tryLogin() : this.signUp}
+			title={'LOGIN'}
+			onPress={ this.tryLogin }
 			titleStyle={styles.loginTextButton}
 			activeOpacity={0.8}
 			containerStyle={{ flex: 1 }}
 			/>
-		);
+			);
 	}
 
 	render() {
@@ -152,41 +195,25 @@ class LoginPage extends React.Component {
 			contentContainerStyle={styles.loginContainer}
 			behavior="position"
 			>
-			<View style={styles.titleContainer}>
-			<View style={{ flexDirection: 'row' }}>
-			<Text style={styles.titleText}>Gaspass</Text>
-			</View>
-			</View>
 			{ this.renderMessage() }
-			<View style={{ flexDirection: 'row' }}>
-			<Button
-			type="clear"
-			activeOpacity={0.7}
-			onPress={() => this.selectCategory(0)}
-			containerStyle={{ flex: 1 }}
-			titleStyle={[
-				styles.categoryText,
-				this.state.isLoginPage && styles.selectedCategoryText,
-			]}
-			title={'Login'}
+			<View style={styles.socialButtons}>
+			<SocialIcon
+			title='Logue com Facebook'
+			onPress={ this.logInFacebook }
+			button
+			type='facebook'
 			/>
-			<Button
-			type="clear"
-			activeOpacity={0.7}
-			onPress={() => this.selectCategory(1)}
-			containerStyle={{ flex: 1 }}
-			titleStyle={[
-				styles.categoryText,
-				!this.state.isLoginPage && styles.selectedCategoryText,
-			]}
-			title={'Sign up'}
+			<SocialIcon
+			onPress={this.signInAsync}
+			title='Logue com Google'
+			button
+			type='google-plus-official'
 			/>
+
 			</View>
-			<View style={styles.rowSelector}>
-			<TabSelector selected={this.state.isLoginPage} />
-			<TabSelector selected={!this.state.isLoginPage} />
-			</View>
+
 			<View style={styles.formContainer}>
+
 			<Input
 			leftIcon={
 				<Icon
@@ -197,13 +224,13 @@ class LoginPage extends React.Component {
 				style={{ backgroundColor: 'transparent' }}
 				/>
 			}
-			value={this.state.mail}
+			value={this.state.email}
 			keyboardAppearance="light"
 			autoFocus={false}
 			autoCapitalize="none"
 			autoCorrect={false}
 			keyboardType="email-address"
-			onChangeText={value => this.onChangeHandler('mail', value)}
+			onChangeText={value => this.onChangeHandler('email', value)}
 			returnKeyType="next"
 			inputStyle={{ marginLeft: 10 }}
 			placeholder={'Email'}
@@ -239,43 +266,8 @@ class LoginPage extends React.Component {
 			value={this.state.password}
 			onChangeText={value => this.onChangeHandler('password', value)}
 			/>
-			{!this.state.isLoginPage && (
-				<Input
-				icon={
-					<Icon
-					name="lock"
-					type="simple-line-icon"
-					color="rgba(0, 0, 0, 0.38)"
-					size={25}
-					style={{ backgroundColor: 'transparent' }}
-					/>
-				}
-				value={passwordConfirmation}
-				secureTextEntry={true}
-				keyboardAppearance="light"
-				autoCapitalize="none"
-				autoCorrect={false}
-				keyboardType="default"
-				returnKeyType={'done'}
-				blurOnSubmit={true}
-				containerStyle={{
-					marginTop: 16,
-					borderBottomColor: 'rgba(0, 0, 0, 0.38)',
-				}}
-				inputStyle={{ marginLeft: 10 }}
-				placeholder={'Confirm password'}
-				ref={input => (this.confirmationInput = input)}
-				onSubmitEditing={this.signUp}
-				onChangeText={passwordConfirmation =>
-					this.setState({ passwordConfirmation })
-				}
-				errorMessage={
-					isConfirmationValid
-					? null
-					: 'Please enter the same password'
-				}
-				/>
-			)}
+
+
 			{ this.renderButton() }
 
 			</View>
@@ -289,33 +281,10 @@ class LoginPage extends React.Component {
 			onPress={() => console.log('Account created')}
 			/>
 			</View>
-			<View style={styles.container}>
-			<FormRow first>
-			<TextInput
-			style={styles.input}
-			placeholder="user@mail.com"
-			value={this.state.mail}
-			onChangeText={value => this.onChangeHandler('mail', value)}
-			keyboardType="email-address"
-			autoCapitalize="none"
-			/>
-			</FormRow>
-			<FormRow last>
-			<TextInput
-			style={styles.input}
-			placeholder="******"
-			secureTextEntry
-			value={this.state.password}
-			onChangeText={value => this.onChangeHandler('password', value)}
-			/>
-			</FormRow>
 
-			{ this.renderButton() }
-			{ this.renderMessage() }
-			</View>
 			</ImageBackground>
 			</View>
-		)
+			)
 	}
 }
 
@@ -323,6 +292,9 @@ class LoginPage extends React.Component {
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
+	},
+	socialButtons: {
+		alignItems: 'center',
 	},
 	rowSelector: {
 		height: 20,
@@ -395,7 +367,7 @@ const styles = StyleSheet.create({
 		textAlign: 'center',
 		color: 'white',
 		fontSize: 24,
-		fontFamily: 'light',
+
 		backgroundColor: 'transparent',
 		opacity: 0.54,
 	},
@@ -405,7 +377,7 @@ const styles = StyleSheet.create({
 	titleText: {
 		color: 'white',
 		fontSize: 30,
-		fontFamily: 'regular',
+
 	},
 	helpContainer: {
 		height: 64,
